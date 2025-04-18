@@ -1,0 +1,16 @@
+{
+  "name": "wilck-compactor",
+  "version": "1.0.0",
+  "description": "A sample Node.js application",
+  "type": "module",
+  "main": "index.mjs",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+      "pg": "^8.11.3"
+  },
+  "author": "Andre Kradolfer <narfdre@gmail.com>",
+  "license": "MIT"
+}

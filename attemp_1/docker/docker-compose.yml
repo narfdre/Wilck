@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: wilck_user
+      POSTGRES_PASSWORD: wilck_password
+      POSTGRES_DB: wilck_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
