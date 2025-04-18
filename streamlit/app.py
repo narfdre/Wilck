@@ -102,7 +102,7 @@ if st.session_state.page == "Park Selection":
                 if st.button("Continue to Attraction Selection"):
                     st.session_state.page = "Attraction Selection"
                     update_query_params()
-                    st.experimental_rerun()
+                    st.rerun()
         except Exception as e:
             st.error(f"Error fetching parks: {str(e)}")
         finally:
@@ -118,7 +118,7 @@ elif st.session_state.page == "Attraction Selection":
     if st.button("← Back to Park Selection"):
         st.session_state.page = "Park Selection"
         update_query_params()
-        st.experimental_rerun()
+        st.rerun()
     
     conn = get_db_connection()
     if conn:
@@ -154,7 +154,7 @@ elif st.session_state.page == "Attraction Selection":
                         st.session_state.selected_attractions = selected_attraction_ids
                         st.session_state.page = "Wait Times"
                         update_query_params()
-                        st.experimental_rerun()
+                        st.rerun()
                     
         except Exception as e:
             st.error(f"Error fetching attractions: {str(e)}")
@@ -171,7 +171,7 @@ elif st.session_state.page == "Wait Times":
     if st.button("← Back to Attraction Selection"):
         st.session_state.page = "Attraction Selection"
         update_query_params()
-        st.experimental_rerun()
+        st.rerun()
     
     conn = get_db_connection()
     if conn:
@@ -316,7 +316,7 @@ elif st.session_state.page == "Wait Times":
                         st.session_state.selected_park = None
                         st.session_state.selected_attractions = []
                         update_query_params()
-                        st.experimental_rerun()
+                        st.rerun()
                 else:
                     st.info("No wait times available for selected attractions")
                     
@@ -324,7 +324,7 @@ elif st.session_state.page == "Wait Times":
                     if st.button("Select Different Attractions"):
                         st.session_state.page = "Attraction Selection"
                         update_query_params()
-                        st.experimental_rerun()
+                        st.rerun()
         except Exception as e:
             st.error(f"Error fetching wait times: {str(e)}")
         finally:
