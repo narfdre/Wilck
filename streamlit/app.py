@@ -166,7 +166,7 @@ elif st.session_state.page == "Wait Times":
     #st.header("Current Wait Times")
     
     # Show the currently selected park and number of attractions
-    st.info(f"Selected Park: {st.session_state.selected_park} | Selected Attractions: {len(st.session_state.selected_attractions)}")
+    #st.info(f"Selected Park: {st.session_state.selected_park} | Selected Attractions: {len(st.session_state.selected_attractions)}")
     
     # Add a back button
     if st.button("← Back to Attraction Selection"):
@@ -285,7 +285,7 @@ elif st.session_state.page == "Wait Times":
                                 4: 'Friday', 5: 'Saturday', 6: 'Sunday'}
                     
                     # Instead of displaying as a dataframe, create cards for each attraction
-                    st.write("### What's the best wait time right now?")
+                    st.write("### Best wait times right now")
                     
                     # Create single column for the cards
                     cols = st.columns(1)
