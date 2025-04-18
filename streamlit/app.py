@@ -90,7 +90,7 @@ if st.session_state.page == "Park Selection":
     if conn:
         try:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                cur.execute("SELECT * FROM parks.park")
+                cur.execute("SELECT * FROM parks.park ORDER BY name")
                 parks = cur.fetchall()
                 park_names = [park['name'] for park in parks]
                 
@@ -139,6 +139,7 @@ elif st.session_state.page == "Attraction Selection":
                     JOIN parks.park p ON a.park_id = p.id
                     WHERE p.name = %s 
                     AND a.attraction_type_id = 2
+                    ORDER BY a.name
                 """, (st.session_state.selected_park,))
                 attractions = cur.fetchall()
                 
@@ -328,56 +329,65 @@ elif st.session_state.page == "Wait Times":
                                     st.markdown(f"#### {row['Attraction']}")
                                 
                                 with header_col2:
-                                    # Time-Based Assessment with enhanced styling
-                                    if row["Time-Based Assessment"] != "N/A":
-                                        # Check if wait time is -1 for "walk on" status
-                                        if row['Wait Time (minutes)'] == -1:
-                                            assessment_text = "No line, always walk on"
-                                            assessment_color = "#00aa00"  # Green color for walk-on
-                                        else:
-                                            assessment_text = row["Time-Based Assessment"]
-                                            assessment_color = {
-                                                "Very Good": "#00aa00",
-                                                "Good": "#88aa00",
-                                                "Average": "#aaaa00",
-                                                "Busy": "#aa8800",
-                                                "Very Busy": "#aa0000"
-                                            }.get(row["Time-Based Assessment"], "#000000")
-                                        
-                                        assessment_style = f"""
-                                            padding: 4px 8px;
-                                            border-radius: 4px;
-                                            background-color: {assessment_color}20;
-                                            color: {assessment_color};
-                                            font-weight: bold;
-                                            text-align: center;
-                                            display: inline-block;
-                                            width: 100%;
-                                            font-size: 0.9em;
-                                        """
-                                        
-                                        st.markdown(
-                                            f"<div style='{assessment_style}'>{assessment_text}</div>",
-                                            unsafe_allow_html=True
-                                        )
+                                    # Check status first
+                                    status_lower = row["Status"].lower()
+                                    is_non_operating = status_lower in ["down", "refurbishment", "closed"]
+                                    
+                                    if is_non_operating:
+                                        # Show status in assessment spot for non-operating rides
+                                        assessment_text = row["Status"]
+                                        assessment_color = "#ff0000"  # Red color for non-operating
+                                    else:
+                                        # Normal assessment logic for operating rides
+                                        if row["Time-Based Assessment"] != "N/A":
+                                            # Check if wait time is -1 for "walk on" status
+                                            if row['Wait Time (minutes)'] == -1:
+                                                assessment_text = "No line, always walk on"
+                                                assessment_color = "#00aa00"  # Green color for walk-on
+                                            else:
+                                                assessment_text = row["Time-Based Assessment"]
+                                                assessment_color = {
+                                                    "Very Good": "#00aa00",
+                                                    "Good": "#88aa00",
+                                                    "Average": "#aaaa00",
+                                                    "Busy": "#aa8800",
+                                                    "Very Busy": "#aa0000"
+                                                }.get(row["Time-Based Assessment"], "#000000")
+                                    
+                                    assessment_style = f"""
+                                        padding: 4px 8px;
+                                        border-radius: 4px;
+                                        background-color: {assessment_color}20;
+                                        color: {assessment_color};
+                                        font-weight: bold;
+                                        text-align: center;
+                                        display: inline-block;
+                                        width: 100%;
+                                        font-size: 0.9em;
+                                    """
+                                    
+                                    st.markdown(
+                                        f"<div style='{assessment_style}'>{assessment_text}</div>",
+                                        unsafe_allow_html=True
+                                    )
 
                                 # Always visible wait time row
-                                wait_col1, wait_col2 = st.columns([1, 2])
-                                with wait_col1:
-                                    # Current Wait Time
-                                    wait_time = row['Wait Time (minutes)']
-                                    if pd.isna(wait_time):
-                                        wait_time = "N/A"
-                                    elif wait_time == -1:
-                                        wait_time = "Walk on"
-                                    else:
-                                        wait_time = f"{int(wait_time)} min"
-                                    st.markdown(f"**Current Wait:** {wait_time}")
-
-                                with wait_col2:
-                                    # Status with color
-                                    status_color = "#ff0000" if row["Status"].lower() in ["down", "refurbishment"] else "#00aa00"
-                                    st.markdown(f"**Status:** <span style='color: {status_color}'>{row['Status']}</span>", unsafe_allow_html=True)
+                                # Only show wait time if the attraction is operating
+                                status_lower = row["Status"].lower()
+                                is_non_operating = status_lower in ["down", "refurbishment", "closed"]
+                                
+                                if not is_non_operating:
+                                    wait_col1, wait_col2 = st.columns([1, 2])
+                                    with wait_col1:
+                                        # Current Wait Time
+                                        wait_time = row['Wait Time (minutes)']
+                                        if pd.isna(wait_time):
+                                            wait_time = "N/A"
+                                        elif wait_time == -1:
+                                            wait_time = "Walk on"
+                                        else:
+                                            wait_time = f"{int(wait_time)} min"
+                                        st.markdown(f"**Current Wait:** {wait_time}")
 
                                 # Expandable section
                                 with st.expander("More Details"):
