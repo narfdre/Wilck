@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import urllib.parse
+from streamlit_extras.stylable_container import stylable_container
 
 # Load environment variables
 load_dotenv()
@@ -137,8 +138,8 @@ elif st.session_state.page == "Attraction Selection":
                     FROM parks.attraction a
                     JOIN parks.park p ON a.park_id = p.id
                     WHERE p.name = %s 
-                    AND a.attraction_type_id NOT IN %s
-                """, (st.session_state.selected_park, tuple(excluded_type_ids)))
+                    AND a.attraction_type_id = 2
+                """, (st.session_state.selected_park,))
                 attractions = cur.fetchall()
                 
                 attraction_options = {attraction['id']: attraction['name'] for attraction in attractions}
@@ -283,32 +284,100 @@ elif st.session_state.page == "Wait Times":
                     day_mapping = {0: 'Monday', 1: 'Tuesday', 2: 'Wednesday', 3: 'Thursday', 
                                 4: 'Friday', 5: 'Saturday', 6: 'Sunday'}
                     
-                    # Create a function to style the dataframe
-                    def highlight_down(row):
+                    # Instead of displaying as a dataframe, create cards for each attraction
+                    st.write("### Current Wait Times")
+                    
+                    # Create single column for the cards
+                    cols = st.columns(1)
+                    
+                    # Iterate through the attractions and create cards
+                    for idx, row in current_df.iterrows():
+                        # Define card style based on status
+                        card_style = """
+                        {
+                            border: 1px solid #e0e0e0;
+                            border-radius: 10px;
+                            padding: 1rem;
+                            margin-bottom: 1rem;
+                            background-color: white;
+                        }
+                        """
+                        
                         if row["Status"].lower() == "down":
-                            return ['background-color: #ffcccc' for _ in row]
-                        return ['' for _ in row]
+                            card_style = """
+                            {
+                                border: 1px solid #ffcccc;
+                                border-radius: 10px;
+                                padding: 1rem;
+                                margin-bottom: 1rem;
+                                background-color: #fff5f5;
+                            }
+                            """
+                        
+                        # Create the card in the single column
+                        with cols[0]:
+                            with stylable_container(
+                                key=f"card_{idx}",
+                                css_styles=card_style
+                            ):
+                                # Attraction Name
+                                st.markdown(f"#### {row['Attraction']}")
+                                
+                                # Wait Time
+                                wait_time = row['Wait Time (minutes)']
+                                if pd.isna(wait_time):
+                                    wait_time = "N/A"
+                                else:
+                                    wait_time = f"{int(wait_time)} min"
+                                st.markdown(f"**Wait Time:** {wait_time}")
+                                
+                                # Status with color
+                                status_color = "#ff0000" if row["Status"].lower() == "down" else "#00aa00"
+                                st.markdown(f"**Status:** <span style='color: {status_color}'>{row['Status']}</span>", unsafe_allow_html=True)
+                                
+                                # Average Wait Time
+                                avg_wait = row['Avg Wait (Same Time)']
+                                if pd.isna(avg_wait):
+                                    avg_wait = "N/A"
+                                else:
+                                    avg_wait = f"{int(avg_wait)} min"
+                                st.markdown(f"**Average Wait:** {avg_wait}")
+                                
+                                # Percentage of Average
+                                if "% of Average" in row and not pd.isna(row["% of Average"]):
+                                    percentage = row["% of Average"]
+                                    if percentage < 99999:  # Check if it's not our NaN replacement value
+                                        st.markdown(f"**% of Average:** {percentage:.1f}%")
+                                
+                                # Time-Based Assessment
+                                if row["Time-Based Assessment"] != "N/A":
+                                    assessment_color = {
+                                        "Very Good": "#00aa00",
+                                        "Good": "#88aa00",
+                                        "Average": "#aaaa00",
+                                        "Busy": "#aa8800",
+                                        "Very Busy": "#aa0000"
+                                    }.get(row["Time-Based Assessment"], "#000000")
+                                    
+                                    st.markdown(
+                                        f"**Assessment:** <span style='color: {assessment_color}'>{row['Time-Based Assessment']}</span>",
+                                        unsafe_allow_html=True
+                                    )
+                                
+                                # Last Updated
+                                st.markdown(f"*Updated: {row['Last Updated'].strftime('%I:%M %p')}*")
                     
-                    # Display the enhanced DataFrame
-                    display_columns = ["Attraction", "Wait Time (minutes)",
-                                    "Avg Wait (Same Time)", "% of Average", "Time-Based Assessment",
-                                    "Status", "Last Updated"]
-                    st.dataframe(
-                        current_df[display_columns].style.apply(highlight_down, axis=1),
-                        hide_index=True
-                    )
-                    
-                    # Display a simplified legend explaining the assessment categories
-                    st.subheader("Wait Time Assessment Legend")
-                    st.markdown("""
-                    - **Very Good**: Current wait is at least 30% below the average
-                    - **Good**: Current wait is 10-30% below the average
-                    - **Average**: Current wait is within 10% of the average
-                    - **Busy**: Current wait is 10-30% above the average
-                    - **Very Busy**: Current wait is more than 30% above the average
-                    
-                    **Time-Based Assessment**: Compares to the average for the same day of week and similar time of day (±1 hour) over the past 60 days
-                    """)
+                    # Display a simplified legend explaining the assessment categories in an expander
+                    with st.expander("Wait Time Assessment Legend"):
+                        st.markdown("""
+                        - **Very Good**: Current wait is at least 30% below the average
+                        - **Good**: Current wait is 10-30% below the average
+                        - **Average**: Current wait is within 10% of the average
+                        - **Busy**: Current wait is 10-30% above the average
+                        - **Very Busy**: Current wait is more than 30% above the average
+                        
+                        **Time-Based Assessment**: Compares to the average for the same day of week and similar time of day (±1 hour) over the past 60 days
+                        """)
                     
                     # Add a button to start over
                     if st.button("Start Over"):
