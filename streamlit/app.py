@@ -285,7 +285,7 @@ elif st.session_state.page == "Wait Times":
                                 4: 'Friday', 5: 'Saturday', 6: 'Sunday'}
                     
                     # Instead of displaying as a dataframe, create cards for each attraction
-                    st.write("### Best wait times right now")
+                    st.write("### Best wait times right now?")
                     
                     # Create single column for the cards
                     cols = st.columns(1)
