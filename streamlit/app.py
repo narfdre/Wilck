@@ -81,7 +81,7 @@ def update_query_params():
 # Update URL parameters to match current state
 update_query_params()
 
-st.title("Wilck - Disneyland Planner")
+#st.title("Wilck - Disneyland Planner")
 
 # Display page based on session state
 if st.session_state.page == "Park Selection":
@@ -330,13 +330,19 @@ elif st.session_state.page == "Wait Times":
                                 with header_col2:
                                     # Time-Based Assessment with enhanced styling
                                     if row["Time-Based Assessment"] != "N/A":
-                                        assessment_color = {
-                                            "Very Good": "#00aa00",
-                                            "Good": "#88aa00",
-                                            "Average": "#aaaa00",
-                                            "Busy": "#aa8800",
-                                            "Very Busy": "#aa0000"
-                                        }.get(row["Time-Based Assessment"], "#000000")
+                                        # Check if wait time is -1 for "walk on" status
+                                        if row['Wait Time (minutes)'] == -1:
+                                            assessment_text = "No line, always walk on"
+                                            assessment_color = "#00aa00"  # Green color for walk-on
+                                        else:
+                                            assessment_text = row["Time-Based Assessment"]
+                                            assessment_color = {
+                                                "Very Good": "#00aa00",
+                                                "Good": "#88aa00",
+                                                "Average": "#aaaa00",
+                                                "Busy": "#aa8800",
+                                                "Very Busy": "#aa0000"
+                                            }.get(row["Time-Based Assessment"], "#000000")
                                         
                                         assessment_style = f"""
                                             padding: 4px 8px;
@@ -347,47 +353,54 @@ elif st.session_state.page == "Wait Times":
                                             text-align: center;
                                             display: inline-block;
                                             width: 100%;
+                                            font-size: 0.9em;
                                         """
                                         
                                         st.markdown(
-                                            f"<div style='{assessment_style}'>{row['Time-Based Assessment']}</div>",
+                                            f"<div style='{assessment_style}'>{assessment_text}</div>",
                                             unsafe_allow_html=True
                                         )
-                                
-                                # Create three columns for the remaining card content
-                                col1, col2, col3 = st.columns(3)
-                                
-                                with col1:
-                                    # Wait Time
+
+                                # Always visible wait time row
+                                wait_col1, wait_col2 = st.columns([1, 2])
+                                with wait_col1:
+                                    # Current Wait Time
                                     wait_time = row['Wait Time (minutes)']
                                     if pd.isna(wait_time):
                                         wait_time = "N/A"
+                                    elif wait_time == -1:
+                                        wait_time = "Walk on"
                                     else:
                                         wait_time = f"{int(wait_time)} min"
-                                    st.markdown(f"**Wait Time:** {wait_time}")
-                                    
+                                    st.markdown(f"**Current Wait:** {wait_time}")
+
+                                with wait_col2:
                                     # Status with color
                                     status_color = "#ff0000" if row["Status"].lower() in ["down", "refurbishment"] else "#00aa00"
                                     st.markdown(f"**Status:** <span style='color: {status_color}'>{row['Status']}</span>", unsafe_allow_html=True)
-                                
-                                with col2:
-                                    # Average Wait Time
-                                    avg_wait = row['Avg Wait (Same Time)']
-                                    if pd.isna(avg_wait):
-                                        avg_wait = "N/A"
-                                    else:
-                                        avg_wait = f"{int(avg_wait)} min"
-                                    st.markdown(f"**Average Wait:** {avg_wait}")
+
+                                # Expandable section
+                                with st.expander("More Details"):
+                                    col1, col2 = st.columns(2)
                                     
-                                    # Percentage of Average
-                                    if "% of Average" in row and not pd.isna(row["% of Average"]):
-                                        percentage = row["% of Average"]
-                                        if percentage < 99999:  # Check if it's not our NaN replacement value
-                                            st.markdown(f"**% of Average:** {percentage:.1f}%")
-                                
-                                with col3:
-                                    # Last Updated
-                                    st.markdown(f"*Updated: {row['Last Updated'].strftime('%I:%M %p')}*")
+                                    with col1:
+                                        # Average Wait Time
+                                        avg_wait = row['Avg Wait (Same Time)']
+                                        if pd.isna(avg_wait):
+                                            avg_wait = "N/A"
+                                        else:
+                                            avg_wait = f"{int(avg_wait)} min"
+                                        st.markdown(f"**Average Wait:** {avg_wait}")
+                                        
+                                        # Percentage of Average
+                                        if "% of Average" in row and not pd.isna(row["% of Average"]):
+                                            percentage = row["% of Average"]
+                                            if percentage < 99999:  # Check if it's not our NaN replacement value
+                                                st.markdown(f"**% of Average:** {percentage:.1f}%")
+                                    
+                                    with col2:
+                                        # Last Updated
+                                        st.markdown(f"*Updated: {row['Last Updated'].strftime('%I:%M %p')}*")
                     
                     # Display a simplified legend explaining the assessment categories in an expander
                     with st.expander("Wait Time Assessment Legend"):
